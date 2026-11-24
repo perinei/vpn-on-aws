@@ -1,2 +1,2 @@
 # vpn-on-aws
-Host your own VPN server on AWS
+Host your own VPN server on AWS.
