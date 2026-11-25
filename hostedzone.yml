@@ -1,0 +1,36 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: create a hosted Zone
+
+Metadata:
+
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Hosted Zone Settings
+        Parameters:
+          - HostedZoneName
+    ParameterLabels:
+      HostedZoneName:
+        default: Domain name for the hosted zone
+
+Parameters:
+
+  HostedZoneName:
+    Type: String
+    Description: Name of the hosted zone (AWS::Route53::HostedZone Name)
+
+Resources:
+
+  rDNS:
+    Type: "AWS::Route53::HostedZone"
+    Properties:
+      HostedZoneConfig:
+        Comment: 'VPN'
+      Name: !Ref HostedZoneName
+
+Outputs:
+  StackVPC:
+    Description: HostedZone ID
+    Value: !Ref rDNS
+    Export:
+      Name: "HostedZoneID"
