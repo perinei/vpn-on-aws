@@ -53,11 +53,14 @@ cp pki/private/"$CLIENT_NAME".key "$CUSTOM_DIR/"
 cd "$CUSTOM_DIR"
 
 # Step 7: Import server and client certificates into ACM in the target region
+# ACM has no friendly-name field, so the name is stored as the "Name" tag
+# (shown as the Name column in the ACM console).
 SERVER_ARN=$(aws acm import-certificate \
   --region "$AWS_REGION" \
   --certificate fileb://"$SERVER_NAME".crt \
   --private-key fileb://"$SERVER_NAME".key \
   --certificate-chain fileb://ca.crt \
+  --tags Key=Name,Value=client-vpn-server-"$SERVER_NAME" \
   --query CertificateArn --output text)
 
 CLIENT_ARN=$(aws acm import-certificate \
@@ -65,6 +68,7 @@ CLIENT_ARN=$(aws acm import-certificate \
   --certificate fileb://"$CLIENT_NAME".crt \
   --private-key fileb://"$CLIENT_NAME".key \
   --certificate-chain fileb://ca.crt \
+  --tags Key=Name,Value=client-vpn-client-"$CLIENT_NAME" \
   --query CertificateArn --output text)
 
 # Save the ARNs for the endpoint creation step
