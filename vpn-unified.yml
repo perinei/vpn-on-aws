@@ -212,7 +212,7 @@ Resources:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneId: !Ref rDNS
-      Name: vpn.!Ref HostedZoneName
+      Name: !Sub "vpn.${HostedZoneName}"
       ResourceRecords:
         - !Sub "vpn.${rVPNclientEndpoint}.prod.clientvpn.${AWS::Region}.amazonaws.com"
       TTL: 900
