@@ -5,8 +5,8 @@ set -euo pipefail
 
 # ---- Configuration (override with environment variables) ----
 AWS_REGION="${AWS_REGION:-us-east-1}"          # Must match the region where you'll create the Client VPN endpoint
-CLIENT_NAME="${CLIENT_NAME:-client1.domain.tld}"
-SERVER_NAME="${SERVER_NAME:-server}"
+CLIENT_NAME="${CLIENT_NAME:-clientVPN.domain.tld}"
+SERVER_NAME="${SERVER_NAME:-serverVPN.domain.tld}"
 CA_CN="${CA_CN:-Client VPN CA}"
 WORK_DIR="${WORK_DIR:-$HOME/easy-rsa-work}"
 CUSTOM_DIR="${CUSTOM_DIR:-$HOME/custom_folder}"
@@ -19,7 +19,6 @@ aws sts get-caller-identity >/dev/null || { echo "ERROR: AWS credentials are not
 
 # Run easy-rsa non-interactively
 export EASYRSA_BATCH=1
-export EASYRSA_REQ_CN="$CA_CN"
 
 mkdir -p "$WORK_DIR"
 cd "$WORK_DIR"
@@ -35,13 +34,13 @@ rm -rf pki
 ./easyrsa init-pki
 
 # Step 3: Build the CA (nopass, no prompts)
-./easyrsa build-ca nopass
+EASYRSA_REQ_CN="$CA_CN" ./easyrsa build-ca nopass
 
 # Step 4: Server certificate and key
-./easyrsa --san=DNS:"$SERVER_NAME" build-server-full "$SERVER_NAME" nopass
+EASYRSA_REQ_CN="$SERVER_NAME" ./easyrsa --san=DNS:"$SERVER_NAME" build-server-full "$SERVER_NAME" nopass
 
 # Step 5: Client certificate and key
-./easyrsa build-client-full "$CLIENT_NAME" nopass
+EASYRSA_REQ_CN="$CLIENT_NAME" ./easyrsa build-client-full "$CLIENT_NAME" nopass
 
 # Step 6: Copy certificates and keys to a custom folder
 mkdir -p "$CUSTOM_DIR"
