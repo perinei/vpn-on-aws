@@ -1,0 +1,122 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: VPN Setup
+
+Parameters:
+  ServerCertificateArn:
+    Type: String
+    Description: ACM ARN of the server certificate (imported by setup-certs.sh, see acm-arns.env)
+  ClientRootCertificateChainArn:
+    Type: String
+    Description: ACM ARN of the client root certificate chain (imported by setup-certs.sh, see acm-arns.env)
+
+Resources:
+  rVPNclientEndpoint:
+    Type: AWS::EC2::ClientVpnEndpoint
+    Properties:
+      AuthenticationOptions:
+        - Type: "certificate-authentication"
+          MutualAuthentication:
+            ClientRootCertificateChainArn: !Ref ClientRootCertificateChainArn
+      ClientCidrBlock: "192.168.4.0/22"
+      ClientConnectOptions:
+        Enabled: false
+      ClientLoginBannerOptions:
+        Enabled: false
+      ConnectionLogOptions:
+        Enabled: false
+      Description: VPN Sao Paulo
+      # DnsServers:
+      # - "*.cvpn-endpoint-0a681f9867bd2ad86.prod.clientvpn.sa-east-1.amazonaws.com"
+      SecurityGroupIds:
+        - "sg-02a6acc4f840698e3"
+      # SelfServicePortal: String
+      ServerCertificateArn: !Ref ServerCertificateArn
+      SessionTimeoutHours: 24
+      SplitTunnel: false      
+      VpcId: "vpc-0eb8451dad3cb587a"
+      TransportProtocol: udp
+      VpnPort: 1194
+      TagSpecifications:
+        # The 'Name' key is what gives it a display name in the console
+          - ResourceType: "client-vpn-endpoint"
+            Tags:
+              - Key: "Name"
+                Value: "VPN Endpoint"
+
+  rVPNtargetNetwork:
+    Type: AWS::EC2::ClientVpnTargetNetworkAssociation
+    Properties:
+      ClientVpnEndpointId:
+        Ref: rVPNclientEndpoint
+      SubnetId: "subnet-0c4056bc7bbacbf40"
+
+  rRoute1:
+    Type: "AWS::EC2::ClientVpnRoute"
+    DependsOn: rVPNtargetNetwork
+    Properties:
+      ClientVpnEndpointId:
+        Ref: rVPNclientEndpoint
+      TargetVpcSubnetId: "subnet-0c4056bc7bbacbf40"
+      DestinationCidrBlock: "0.0.0.0/0"
+      Description: "Internet"
+  rRoute2:
+    Type: "AWS::EC2::ClientVpnRoute"
+    DependsOn: rVPNtargetNetwork
+    Properties:
+      ClientVpnEndpointId:
+        Ref: rVPNclientEndpoint
+      TargetVpcSubnetId: "local"
+      DestinationCidrBlock: "192.168.4.0/22"
+      Description: "Local"
+  # rRoute3:
+  #   Type: "AWS::EC2::ClientVpnRoute"
+  #   DependsOn: rVPNtargetNetwork
+  #   Properties:
+  #     ClientVpnEndpointId:
+  #       Ref: rVPNclientEndpoint
+  #     TargetVpcSubnetId: "subnet-0c4056bc7bbacbf40"
+  #     DestinationCidrBlock: "172.31.0.0/16"
+  #     Description: "Local"
+
+  rAuthRule1:
+    Type: AWS::EC2::ClientVpnAuthorizationRule
+    Properties:
+      # AccessGroupId: String
+      AuthorizeAllGroups: true
+      ClientVpnEndpointId:
+        Ref: rVPNclientEndpoint
+      Description: Internet
+      TargetNetworkCidr: "0.0.0.0/0"
+
+  rAuthRule2:
+    Type: AWS::EC2::ClientVpnAuthorizationRule
+    Properties:
+      # AccessGroupId: String
+      AuthorizeAllGroups: true
+      ClientVpnEndpointId:
+        Ref: rVPNclientEndpoint
+      Description: vpc
+      TargetNetworkCidr: "192.168.4.0/22"
+
+  rAuthRule3:
+    Type: AWS::EC2::ClientVpnAuthorizationRule
+    Properties:
+      # AccessGroupId: String
+      AuthorizeAllGroups: true
+      ClientVpnEndpointId:
+        Ref: rVPNclientEndpoint
+      Description: vpc
+      TargetNetworkCidr: "172.31.0.0/16"
+
+
+
+  myDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId:
+        Fn::ImportValue: "HostedZoneID"
+      Name: vpn.zumiki.com
+      ResourceRecords:
+        - !Sub "vpn.${rVPNclientEndpoint}.prod.clientvpn.sa-east-1.amazonaws.com"
+      TTL: 900
+      Type: CNAME
