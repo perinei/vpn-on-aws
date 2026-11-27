@@ -70,6 +70,21 @@ CLIENT_ARN=$(aws acm import-certificate \
   --tags Key=Name,Value=client-vpn-client-"$CLIENT_NAME" \
   --query CertificateArn --output text)
 
+# Store the ARNs in SSM Parameter Store (--overwrite so the script can be rerun)
+aws ssm put-parameter \
+  --region "$AWS_REGION" \
+  --name /vpn/server-cert \
+  --type String \
+  --value "$SERVER_ARN" \
+  --overwrite >/dev/null
+
+aws ssm put-parameter \
+  --region "$AWS_REGION" \
+  --name /vpn/client-cert \
+  --type String \
+  --value "$CLIENT_ARN" \
+  --overwrite >/dev/null
+
 # Save the ARNs for the endpoint creation step
 cat > "$CUSTOM_DIR/acm-arns.env" <<EOF
 SERVER_CERT_ARN=$SERVER_ARN

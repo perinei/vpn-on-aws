@@ -14,7 +14,7 @@ Parameters:
     Description: ACM ARN of the client root certificate chain (imported by setup-certs.sh, see acm-arns.env)
   HostedZoneName:
     Type: String
-    Description: Name of the hosted zone (e.g. zumiki.com)
+    Description: Name of the hosted zone (e.g. example.com)
 
 
 ###### VPC and Subnets ######
@@ -218,7 +218,7 @@ Resources:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneId: !Ref rDNS
-      Name: vpn.zumiki.com
+      Name: vpn.!Ref HostedZoneName
       ResourceRecords:
         - !Sub "vpn.${rVPNclientEndpoint}.prod.clientvpn.sa-east-1.amazonaws.com"
       TTL: 900
