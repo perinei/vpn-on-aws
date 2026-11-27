@@ -9,6 +9,14 @@ Parameters:
   HostedZoneName:
     Type: String
     Description: Name of the hosted zone (e.g. example.com)
+  DeployClientVPN:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: Whether to create the Client VPN resources (endpoint, target network, routes, auth rules, DNS record)
+
+Conditions:
+  CreateClientVPN: !Equals [!Ref DeployClientVPN, 'true']
 
 
 ###### VPC and Subnets ######
@@ -140,6 +148,7 @@ Resources:
   ###### Client VPN ######
   rVPNclientEndpoint:
     Type: AWS::EC2::ClientVpnEndpoint
+    Condition: CreateClientVPN
     Properties:
       AuthenticationOptions:
         - Type: "certificate-authentication"
@@ -169,6 +178,7 @@ Resources:
 
   rVPNtargetNetwork:
     Type: AWS::EC2::ClientVpnTargetNetworkAssociation
+    Condition: CreateClientVPN
     DependsOn: VPCGatewayAttachment
     Properties:
       ClientVpnEndpointId: !Ref rVPNclientEndpoint
@@ -176,6 +186,7 @@ Resources:
 
   rRoute1:
     Type: AWS::EC2::ClientVpnRoute
+    Condition: CreateClientVPN
     DependsOn: rVPNtargetNetwork
     Properties:
       ClientVpnEndpointId: !Ref rVPNclientEndpoint
@@ -185,6 +196,7 @@ Resources:
 
   rRoute2:
     Type: AWS::EC2::ClientVpnRoute
+    Condition: CreateClientVPN
     DependsOn: rVPNtargetNetwork
     Properties:
       ClientVpnEndpointId: !Ref rVPNclientEndpoint
@@ -194,6 +206,7 @@ Resources:
 
   rAuthRule1:
     Type: AWS::EC2::ClientVpnAuthorizationRule
+    Condition: CreateClientVPN
     Properties:
       AuthorizeAllGroups: true
       ClientVpnEndpointId: !Ref rVPNclientEndpoint
@@ -202,6 +215,7 @@ Resources:
 
   rAuthRule2:
     Type: AWS::EC2::ClientVpnAuthorizationRule
+    Condition: CreateClientVPN
     Properties:
       AuthorizeAllGroups: true
       ClientVpnEndpointId: !Ref rVPNclientEndpoint
@@ -210,6 +224,7 @@ Resources:
 
   myDNSRecord:
     Type: AWS::Route53::RecordSet
+    Condition: CreateClientVPN
     Properties:
       HostedZoneId: !Ref rDNS
       Name: !Sub "vpn.${HostedZoneName}"
