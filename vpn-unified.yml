@@ -6,12 +6,6 @@ Parameters:
     Type: String
     Default: 10.0.0.0/16
     Description: CIDR block for the VPC
-  ServerCertificateArn:
-    Type: String
-    Description: ACM ARN of the server certificate (imported by setup-certs.sh, see acm-arns.env)
-  ClientRootCertificateChainArn:
-    Type: String
-    Description: ACM ARN of the client root certificate chain (imported by setup-certs.sh, see acm-arns.env)
   HostedZoneName:
     Type: String
     Description: Name of the hosted zone (e.g. example.com)
@@ -150,7 +144,7 @@ Resources:
       AuthenticationOptions:
         - Type: "certificate-authentication"
           MutualAuthentication:
-            ClientRootCertificateChainArn: !Ref ClientRootCertificateChainArn
+            ClientRootCertificateChainArn: "{{resolve:ssm:/vpn/client-cert}}"
       ClientCidrBlock: "192.168.4.0/22"
       ClientConnectOptions:
         Enabled: false
@@ -158,10 +152,10 @@ Resources:
         Enabled: false
       ConnectionLogOptions:
         Enabled: false
-      Description: VPN Sao Paulo
+      Description: VPN
       SecurityGroupIds:
         - !Ref PublicSecurityGroup
-      ServerCertificateArn: !Ref ServerCertificateArn
+      ServerCertificateArn: "{{resolve:ssm:/vpn/server-cert}}"
       SessionTimeoutHours: 24
       SplitTunnel: false
       VpcId: !Ref VPC
@@ -220,7 +214,7 @@ Resources:
       HostedZoneId: !Ref rDNS
       Name: vpn.!Ref HostedZoneName
       ResourceRecords:
-        - !Sub "vpn.${rVPNclientEndpoint}.prod.clientvpn.sa-east-1.amazonaws.com"
+        - !Sub "vpn.${rVPNclientEndpoint}.prod.clientvpn.${AWS::Region}.amazonaws.com"
       TTL: 900
       Type: CNAME
 
